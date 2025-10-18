@@ -1,36 +1,25 @@
 <!doctype html>
 <html lang="ko">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>모바일 쇼핑몰</title>
-<style>
-body{margin:0;font-family:sans-serif;background:#fff;color:#222}
-.container{max-width:420px;margin:0 auto;padding:10px}
-.card img{width:100%;border-radius:8px;margin-bottom:10px}
-#loading-screen{position:fixed;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;justify-content:center;align-items:center;background:#fff;z-index:9999}
-#loading-screen img{width:120px;height:auto;margin-bottom:15px}
-#loading-screen p{text-align:center;font-size:16px;color:#333;line-height:1.5}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>모바일 쇼핑몰</title>
+  <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-<!-- 로딩화면 -->
-<div id="loading-screen">
-  <img src="/sfoodgoTH 메인.png" alt="loading"/>
-  <p><strong>For VIP customers!</strong><br/>กรุณารอสักครู่นะคะ</p>
-</div>
-<div class="container" id="list"></div>
+  <div id="loading-screen" style="position:fixed;inset:0;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999">
+    <img src="/sfoodgoTH 메인.png" alt="loading" style="width:120px;height:auto;margin-bottom:16px">
+    <p style="font-size:16px;color:#333;text-align:center;line-height:1.4">
+      <strong>For VIP customers!</strong><br/>กรุณารอสักครู่นะคะ
+    </p>
+  </div>
+  <div id="app"><div class="container"><div id="list"></div></div></div>
 <script>
-window.addEventListener('load',()=>{
-  const l=document.getElementById('loading-screen');
-  setTimeout(()=>{l.style.opacity='0';setTimeout(()=>l.remove(),500);},800);
-});
-async function render(){
- const r=await fetch('/api/items');const items=await r.json();
- const list=document.getElementById('list');list.innerHTML='';
- items.forEach(it=>{const img=document.createElement('img');img.src=it.main;img.onclick=()=>window.open(it.detail,'_blank');list.appendChild(img);});
-}
-render();
+async function fetchItems(){ const r = await fetch('/api/items'); return await r.json(); }
+function createCard(item){ const div=document.createElement('div');div.className='card';const img=document.createElement('img');img.src=item.main;img.alt=item.title||'';img.onclick=()=>openDetail(item);div.appendChild(img);return div; }
+function openDetail(item){ const modal=document.createElement('div');modal.className='modal';modal.onclick=()=>document.body.removeChild(modal);const inner=document.createElement('div');inner.className='modal-inner';const img=document.createElement('img');img.src=item.detail;inner.appendChild(img);modal.appendChild(inner);document.body.appendChild(modal); }
+async function render(){ const list=document.getElementById('list');list.innerHTML=''; const items=await fetchItems(); if(!items.length){ const msg=document.createElement('div'); msg.style.cssText='padding:24px;text-align:center;color:#666;line-height:1.6'; msg.innerHTML='<div style="font-size:16px">아직 표시할 상품이 없습니다.</div><div style="font-size:14px">관리자 페이지에서 이미지를 업로드해주세요.</div><div style="font-size:14px">กรุณาอัปโหลดรูปภาพผ่านหน้าแอดมิน</div>'; list.appendChild(msg);} else { items.forEach(it=>list.appendChild(createCard(it))); } }
+window.addEventListener('load', function(){ const loading=document.getElementById('loading-screen'); if(loading){ loading.style.transition='opacity .5s'; loading.style.opacity='0'; setTimeout(()=>loading.remove(),600);} render(); });
 </script>
 </body>
 </html>

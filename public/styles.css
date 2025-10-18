@@ -6,7 +6,6 @@ body{margin:0;background:#fff;color:#222}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:999}
 .modal-inner{background:#fff;padding:10px;border-radius:6px;max-width:95%;max-height:90%;overflow:auto}
 .modal-inner img{width:100%;height:auto;display:block}
-/* admin */
 .admin-container{max-width:720px;margin:10px auto;padding:12px}
 .admin-row{display:flex;gap:8px;align-items:center;padding:8px;border:1px solid #eee;margin-bottom:8px}
 .admin-row img{width:120px;height:70px;object-fit:cover;border-radius:4px}
