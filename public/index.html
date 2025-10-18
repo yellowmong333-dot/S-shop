@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>모바일 쇼핑몰</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div id="app">
+    <div class="container">
+      <div id="list"></div>
+    </div>
+  </div>
+
+<script>
+async function fetchItems(){
+  const res = await fetch('/api/items');
+  return await res.json();
+}
+function createCard(item){
+  const div = document.createElement('div');
+  div.className = 'card';
+  const img = document.createElement('img');
+  img.src = item.main;
+  img.alt = item.title || '';
+  img.onclick = () => openDetail(item);
+  div.appendChild(img);
+  return div;
+}
+function openDetail(item){
+  const modal = document.createElement('div');
+  modal.className='modal';
+  modal.onclick = ()=> document.body.removeChild(modal);
+  const inner = document.createElement('div');
+  inner.className='modal-inner';
+  const img = document.createElement('img');
+  img.src = item.detail;
+  inner.appendChild(img);
+  modal.appendChild(inner);
+  document.body.appendChild(modal);
+}
+async function render(){
+  const list = document.getElementById('list');
+  list.innerHTML = '';
+  const items = await fetchItems();
+  items.forEach(it => list.appendChild(createCard(it)));
+}
+render();
+</script>
+</body>
+</html>
