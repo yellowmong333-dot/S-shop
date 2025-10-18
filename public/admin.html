@@ -1,1 +1,110 @@
-<h2>관리자 페이지는 기존 버전에서 동일합니다.</h2>
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>관리자 - 업로드</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="admin-container">
+    <h1>관리자 페이지</h1>
+    <div id="loginBox">
+      <input id="password" type="password" placeholder="비밀번호 입력" />
+      <button id="loginBtn">로그인</button>
+      <p class="hint">기본 비밀번호: <code>admin123</code> (환경변수 ADMIN_PASS로 변경 가능)</p>
+    </div>
+
+    <div id="panel" style="display:none">
+      <h2>상품 업로드</h2>
+      <form id="uploadForm">
+        <input name="title" placeholder="상품명(선택)"/><br/>
+        <label>메인 이미지 (목록에 표시)</label><br/>
+        <input type="file" name="main" accept="image/*" required /><br/>
+        <label>상세 이미지 (클릭 시 표시)</label><br/>
+        <input type="file" name="detail" accept="image/*" required /><br/>
+        <button type="submit">업로드</button>
+      </form>
+
+      <h2>현재 목록 (위로/아래로/삭제)</h2>
+      <div id="items"></div>
+      <button id="saveOrder" style="display:none">순서 저장</button>
+    </div>
+  </div>
+
+<script>
+let logged=false;
+document.getElementById('loginBtn').addEventListener('click', async ()=>{
+  const pw = document.getElementById('password').value;
+  const res = await fetch('/api/admin/login',{method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({password:pw})});
+  if(res.ok){ logged=true; document.getElementById('loginBox').style.display='none'; document.getElementById('panel').style.display='block'; loadItems(); } else { alert('비밀번호 틀림'); }
+});
+
+async function loadItems(){
+  const res = await fetch('/api/items');
+  const items = await res.json();
+  const container = document.getElementById('items');
+  container.innerHTML='';
+  items.forEach((it, idx)=>{
+    const row = document.createElement('div');
+    row.className='admin-row';
+    const img = document.createElement('img'); img.src = it.main;
+    const title = document.createElement('div'); title.textContent = it.title || '';
+    const up = document.createElement('button'); up.textContent='위로'; up.onclick = ()=> move(idx, -1);
+    const down = document.createElement('button'); down.textContent='아래로'; down.onclick = ()=> move(idx, 1);
+    const del = document.createElement('button'); del.textContent='삭제'; del.onclick = ()=> removeItem(it.id);
+    row.appendChild(img); row.appendChild(title); row.appendChild(up); row.appendChild(down); row.appendChild(del);
+    container.appendChild(row);
+  });
+  document.getElementById('saveOrder').style.display='inline-block';
+}
+
+function swap(arr, i, j){ const t = arr[i]; arr[i]=arr[j]; arr[j]=t; }
+
+function move(idx, dir){
+  fetch('/api/items').then(r=>r.json()).then(items=>{
+    const newIdx = idx+dir;
+    if(newIdx<0 || newIdx>=items.length) return;
+    swap(items, idx, newIdx);
+    // update UI locally
+    const container = document.getElementById('items');
+    container.innerHTML='';
+    items.forEach((it, i)=>{
+      const row = document.createElement('div');
+      row.className='admin-row';
+      const img = document.createElement('img'); img.src = it.main;
+      const title = document.createElement('div'); title.textContent = it.title || '';
+      const up = document.createElement('button'); up.textContent='위로'; up.onclick = ()=> move(i, -1);
+      const down = document.createElement('button'); down.textContent='아래로'; down.onclick = ()=> move(i, 1);
+      const del = document.createElement('button'); del.textContent='삭제'; del.onclick = ()=> removeItem(it.id);
+      row.appendChild(img); row.appendChild(title); row.appendChild(up); row.appendChild(down); row.appendChild(del);
+      container.appendChild(row);
+    });
+    // remember order in a hidden element
+    window._currentOrder = items.map(it=>it.id);
+  });
+}
+
+async function removeItem(id){
+  if(!confirm('삭제하시겠습니까?')) return;
+  const res = await fetch('/api/item/'+id, {method:'DELETE'});
+  if(res.ok) loadItems();
+}
+
+document.getElementById('uploadForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const form = e.target;
+  const fd = new FormData(form);
+  const res = await fetch('/api/upload', {method:'POST', body: fd});
+  if(res.ok){ alert('업로드 완료'); form.reset(); loadItems(); } else { alert('업로드 실패'); }
+});
+
+document.getElementById('saveOrder').addEventListener('click', async ()=>{
+  const order = window._currentOrder;
+  if(!order) { alert('먼저 순서를 변경하세요'); return; }
+  const res = await fetch('/api/reorder', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({order})});
+  if(res.ok) { alert('순서 저장됨'); loadItems(); } else alert('저장 실패');
+});
+</script>
+</body>
+</html>
