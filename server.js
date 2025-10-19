@@ -36,19 +36,32 @@ const storage = new CloudinaryStorage({
 
 const upload = multer({ storage });
 
-// ✅ 업로드 엔드포인트
-app.post('/upload', upload.fields([{ name: 'mainImage' }, { name: 'detailImage' }]), (req, res) => {
+// ✅ 업로드 엔드포인트 (호환 버전)
+app.post(['/api/upload', '/upload'], upload.any(), (req, res) => {
   try {
-    const result = {
-      mainImage: req.files['mainImage'] ? req.files['mainImage'][0].path : null,
-      detailImage: req.files['detailImage'] ? req.files['detailImage'][0].path : null
-    };
-    res.json({ success: true, result });
+    // multer.any()로 들어온 파일들을 필드명 호환 처리
+    let mainUrl = null;
+    let detailUrl = null;
+
+    (req.files || []).forEach(f => {
+      if (['mainImage', 'main'].includes(f.fieldname)) mainUrl = f.path;
+      if (['detailImage', 'detail'].includes(f.fieldname)) detailUrl = f.path;
+    });
+
+    // 업로드가 하나도 없더라도 응답은 정상적으로 반환
+    res.json({
+      success: true,
+      result: {
+        mainImage: mainUrl,
+        detailImage: detailUrl
+      }
+    });
   } catch (err) {
     console.error('Upload failed:', err);
     res.status(500).json({ success: false, error: 'Upload failed' });
   }
 });
+
 
 // ✅ 관리자 비밀번호 (환경변수)
 const ADMIN_PASS = process.env.ADMIN_PASS || 'admin123';
