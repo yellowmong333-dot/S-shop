@@ -62,3 +62,4 @@ app.post(['/api/admin/login', '/admin-login'], (req, res) => {
     res.status(401).json({ success: false });
   }
 });
+app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
