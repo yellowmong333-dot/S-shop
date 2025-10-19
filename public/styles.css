@@ -66,10 +66,14 @@ button {
 .stack-item img {
   width: 100%;
   height: auto;
-  aspect-ratio: 19/6; /* 🔥 19:6 비율 */
-  object-fit: cover;
+  aspect-ratio: 16 / 9;
+  object-fit: cover; /* 그대로 유지 */
+  border-radius: 10px;
   display: block;
+  transform: scale(0.9); /* ✅ 살짝 축소 */
+  transform-origin: center;
 }
+
 
 .stack-item .cap {
   padding: 8px 12px;
