@@ -53,10 +53,12 @@ app.post('/upload', upload.fields([{ name: 'mainImage' }, { name: 'detailImage' 
 // ✅ 관리자 비밀번호 (환경변수)
 const ADMIN_PASS = process.env.ADMIN_PASS || 'admin123';
 
-app.post('/admin-login', (req, res) => {
+// ✅ 기존 + 새 버전 모두 지원
+app.post(['/api/admin/login', '/admin-login'], (req, res) => {
   const { password } = req.body;
-  if (password === ADMIN_PASS) res.json({ success: true });
-  else res.status(401).json({ success: false });
+  if (password === ADMIN_PASS) {
+    res.json({ success: true });
+  } else {
+    res.status(401).json({ success: false });
+  }
 });
-
-app.listen(PORT, () => console.log(`✅ Server running on ${PORT}`));
