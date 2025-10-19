@@ -130,3 +130,20 @@ button {
   border: 1px solid #e5e7eb;
   border-radius: 8px;
 }
+
+/* === 썸네일을 851×315로 ‘그대로’ 보이게 === */
+.stack-item {              /* 카드 바깥쪽 잘림 방지 */
+  overflow: visible;
+}
+
+.stack-item img {
+  display: block;
+  width: 100%;
+  height: auto;            /* 세로는 비율대로 */
+  max-width: 851px;        /* 원본 이상 확대 금지 */
+  aspect-ratio: auto !important;     /* 16:9 강제 제거 */
+  object-fit: contain !important;     /* 절대 자르지 않음 */
+  background: #fff;
+  margin: 0 auto;          /* 가운데 정렬 */
+  transform: none !important;         /* 예전 scale 보정 무효화 */
+}
