@@ -1,19 +1,16 @@
 
 const express = require('express');
+const fs = require('fs');
 const path = require('path');
 const cors = require('cors');
 const multer = require('multer');
 const { v2: cloudinary } = require('cloudinary');
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
-
-// ========= Cloudinary 설정 =========
 cloudinary.config({
   cloud_name: process.env.CLOUD_NAME,
   api_key: process.env.CLOUD_API_KEY,
   api_secret: process.env.CLOUD_API_SECRET,
 });
-
-// 업로드 스토리지(Cloudinary)
 const storage = new CloudinaryStorage({
   cloudinary,
   params: async (req, file) => ({
@@ -23,54 +20,65 @@ const storage = new CloudinaryStorage({
   }),
 });
 const upload = multer({ storage });
-
 const app = express();
 const PORT = process.env.PORT || 3000;
-
-// ========= 미들웨어 =========
+const ADMIN_PASS = process.env.ADMIN_PASS || 'admin123';
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// 정적 파일 (사용자/관리자 UI는 기존 public 그대로 사용)
 app.use('/', express.static(path.join(__dirname, 'public')));
-
-// ========= 헬스 체크 (UptimeRobot) =========
 app.get('/health', (req, res) => res.status(200).send('OK'));
-
-// ========= 관리자 로그인 =========
-const ADMIN_PASS = process.env.ADMIN_PASS || 'admin123';
-
-// 기존 경로(/api/admin/login)와 새 경로(/admin-login) 모두 허용
+const DATA_FILE = path.join(__dirname, 'data.json');
+function readData() { try { return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')); } catch(e){ return { items: [] }; }}
+function writeData(data) { fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2)); }
+if (!fs.existsSync(DATA_FILE)) writeData({ items: [] });
 app.post(['/api/admin/login', '/admin-login'], (req, res) => {
   const { password } = req.body || {};
   if (password === ADMIN_PASS) return res.json({ success: true });
   return res.status(401).json({ success: false });
 });
-
-// ========= 업로드 엔드포인트 =========
-// - 경로 호환: /upload, /api/upload
-// - 필드 호환: mainImage | main, detailImage | detail
+app.get('/api/items', (req, res) => {
+  const data = readData();
+  data.items.sort((a,b) => (a.order ?? 0) - (b.order ?? 0));
+  res.json({ items: data.items });
+});
 app.post(['/upload', '/api/upload'], upload.any(), (req, res) => {
   try {
-    let mainUrl = null;
-    let detailUrl = null;
-
-    (req.files || []).forEach((f) => {
+    let mainUrl = null, detailUrl = null;
+    (req.files || []).forEach(f => {
       const url = f.path || f.secure_url || null;
-      if (['mainImage', 'main'].includes(f.fieldname)) mainUrl = url;
-      if (['detailImage', 'detail'].includes(f.fieldname)) detailUrl = url;
+      if (['mainImage','main'].includes(f.fieldname)) mainUrl = url;
+      if (['detailImage','detail'].includes(f.fieldname)) detailUrl = url;
     });
-
-    return res.json({
-      success: true,
-      result: { mainImage: mainUrl, detailImage: detailUrl },
-    });
-  } catch (err) {
+    const name = (req.body && (req.body.name || req.body.title)) || '';
+    const data = readData();
+    const id = Date.now().toString();
+    const order = (data.items.length ? Math.max(...data.items.map(i=>i.order||0))+1 : 1);
+    const item = { id, name, mainUrl, detailUrl, order, createdAt: new Date().toISOString() };
+    data.items.push(item);
+    writeData(data);
+    return res.json({ success:true, item });
+  } catch(err){
     console.error('Upload failed:', err);
-    return res.status(500).json({ success: false, error: 'Upload failed' });
+    return res.status(500).json({ success:false, error:'Upload failed' });
   }
 });
-
-// ========= 서버 시작 =========
+app.post('/api/reorder', (req, res) => {
+  try {
+    const { ids } = req.body || {};
+    if (!Array.isArray(ids)) return res.status(400).json({ success:false });
+    const data = readData();
+    data.items.forEach(i => { const idx = ids.indexOf(i.id); if (idx !== -1) i.order = idx+1; });
+    writeData(data);
+    res.json({ success:true });
+  } catch(e){ res.status(500).json({ success:false }); }
+});
+app.delete('/api/item/:id', (req, res) => {
+  const { id } = req.params;
+  const data = readData();
+  const before = data.items.length;
+  data.items = data.items.filter(i => i.id !== id);
+  writeData(data);
+  res.json({ success: before !== data.items.length });
+});
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
