@@ -64,17 +64,16 @@ button {
 }
 
 .stack-item img {
-  width: 100%;
-  height: auto;
-  max-height: 260px;     /* ✅ 너무 큰 이미지 방지용 */
-  object-fit: contain;   /* ✅ 원본 비율 유지 */
-  background-color: #fff;
+  width: 100%;              /* 화면 너비에 맞춤 */
+  height: auto;             /* 세로는 비율 유지 */
+  max-width: 851px;         /* 원본 비율 기준 */
+  aspect-ratio: 851 / 315;  /* ✅ 정비율 고정 */
+  object-fit: contain;      /* 확대 없이, 잘림 없이 */
+  background-color: #fff;   /* 주변 여백이 있을 때 흰 배경 */
   border-radius: 10px;
   display: block;
-  aspect-ratio: auto;    /* ✅ 비율 강제 제거 */
+  margin: 0 auto;           /* 가운데 정렬 */
 }
-
-
 
 .stack-item .cap {
   padding: 8px 12px;
