@@ -67,12 +67,12 @@ button {
   width: 100%;
   height: auto;
   aspect-ratio: 16 / 9;
-  object-fit: cover; /* 그대로 유지 */
+  object-fit: contain;   /* ✅ cover → contain 으로 변경 */
+  background-color: #fff; /* 빈 여백이 생기면 흰색 배경 */
   border-radius: 10px;
   display: block;
-  transform: scale(0.9); /* ✅ 살짝 축소 */
-  transform-origin: center;
 }
+
 
 
 .stack-item .cap {
