@@ -1,0 +1,76 @@
+/* SFOODGO Thumbnail Style - Fixed Aspect Ratio 851x315 */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+/* Top Navigation Bar */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #0f4e66;
+  color: #fff;
+  padding: 14px 16px;
+  font-weight: 700;
+}
+
+/* Card Container */
+.card {
+  background: #f8f9fb;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  margin: 16px;
+  padding: 16px;
+}
+
+/* Hidden Utility */
+.hidden {
+  display: none;
+}
+
+/* Thumbnail Grid */
+.stack-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  padding: 12px;
+}
+
+/* Individual Thumbnail */
+.stack-item {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 12px;
+  border: 1px solid #ddd;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  overflow: visible;
+  padding: 8px;
+}
+
+/* Thumbnail Image */
+.stack-item img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+  aspect-ratio: 851 / 315;
+  background-color: #fff;
+  border-radius: 10px;
+  margin: 0 auto;
+}
+
+/* Caption Text */
+.stack-item .cap {
+  padding: 8px 12px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #111;
+}
