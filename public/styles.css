@@ -55,28 +55,25 @@ button {
   display: flex;
   justify-content: center;
   align-items: center;
+  background: #fff;
   border-radius: 12px;
   border: 1px solid #ddd;
-  background: #fff;
   box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-  text-decoration: none;
-  color: inherit;
-  overflow: visible;  /* ✅ 여기 중요! 이미지 잘림 방지 */
+  overflow: visible;        /* ✅ 이미지 짤림 방지 */
+  padding: 8px;             /* 여백 조금 */
 }
 
 
 .stack-item img {
-  width: 100%;
-  height: auto;
-  aspect-ratio: 851 / 315;        /* Canva 비율 유지 */
-  object-fit: contain !important; /* 이미지 잘림 없이 전체 표시 */
-  background-color: #fff;         /* 남는 공간 흰색 */
   display: block;
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;      /* ✅ 잘림 없음 */
+  background-color: #fff;   /* 흰색 여백 */
+  aspect-ratio: 851 / 315;  /* Canva 비율 */
   border-radius: 10px;
   margin: 0 auto;
 }
-
-
 
 .stack-item .cap {
   padding: 8px 12px;
