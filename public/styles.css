@@ -52,7 +52,10 @@ button {
 }
 
 .stack-item {
-  display: block;
+  display: flex;                /* ✅ 추가 */
+  justify-content: center;      /* ✅ 추가: 가로 가운데 정렬 */
+  align-items: center;          /* ✅ 추가: 세로 가운데 정렬 */
+  
   width: 100%;
   border-radius: 12px;
   overflow: hidden;
@@ -64,16 +67,17 @@ button {
 }
 
 .stack-item img {
-  width: 100%;              /* 화면 너비에 맞춤 */
-  height: auto;             /* 세로는 비율 유지 */
-  max-width: 851px;         /* 원본 비율 기준 */
-  aspect-ratio: 851 / 315;  /* ✅ 정비율 고정 */
-  object-fit: contain;      /* 확대 없이, 잘림 없이 */
-  background-color: #fff;   /* 주변 여백이 있을 때 흰 배경 */
-  border-radius: 10px;
   display: block;
-  margin: 0 auto;           /* 가운데 정렬 */
+  width: 100%;                 /* 화면 크기에 맞게 가로 채움 */
+  height: auto;                /* 세로 자동 비율 조정 */
+  aspect-ratio: 851 / 315;     /* Canva 비율 그대로 유지 */
+  object-fit: scale-down;      /* 절대 잘리지 않게 (contain보다 안전) */
+  background-color: #fff;      /* 남는 부분 흰색 처리 */
+  border-radius: 10px;
+  margin: 0 auto;
+  max-width: 851px;            /* 원본 이상 확대 방지 */
 }
+
 
 .stack-item .cap {
   padding: 8px 12px;
