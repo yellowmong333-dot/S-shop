@@ -52,31 +52,30 @@ button {
 }
 
 .stack-item {
-  display: flex;                /* ✅ 추가 */
-  justify-content: center;      /* ✅ 추가: 가로 가운데 정렬 */
-  align-items: center;          /* ✅ 추가: 세로 가운데 정렬 */
-  
-  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   border-radius: 12px;
-  overflow: hidden;
   border: 1px solid #ddd;
   background: #fff;
   box-shadow: 0 1px 4px rgba(0,0,0,0.08);
   text-decoration: none;
   color: inherit;
+  overflow: visible;  /* ✅ 여기 중요! 이미지 잘림 방지 */
 }
 
+
 .stack-item img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 851 / 315;        /* Canva 비율 유지 */
+  object-fit: contain !important; /* 이미지 잘림 없이 전체 표시 */
+  background-color: #fff;         /* 남는 공간 흰색 */
   display: block;
-  width: 100%;                 /* 화면 크기에 맞게 가로 채움 */
-  height: auto;                /* 세로 자동 비율 조정 */
-  aspect-ratio: 851 / 315;     /* Canva 비율 그대로 유지 */
-  object-fit: scale-down;      /* 절대 잘리지 않게 (contain보다 안전) */
-  background-color: #fff;      /* 남는 부분 흰색 처리 */
   border-radius: 10px;
   margin: 0 auto;
-  max-width: 851px;            /* 원본 이상 확대 방지 */
 }
+
 
 
 .stack-item .cap {
