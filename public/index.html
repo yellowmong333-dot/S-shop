@@ -1,58 +1,41 @@
 <!doctype html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>SFOODGO</title>
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
   <div class="topbar">SFOODGO</div>
-  <main class="grid" id="list"></main>
-  <div class="modal" id="modal" aria-hidden="true">
-    <img id="modalImg" alt="상세 이미지" />
-  </div>
+
+  <main id="list" class="stack-list"></main>
+
   <script>
-    function clThumb(url, w=851, h=315) {
-      if (!url || !url.includes('/upload/')) return url;
-      return url.replace('/upload/', `/upload/c_pad,w_${w},h_${h},b_white,q_auto,f_auto/`);
-    }
-    function clDetail(url, maxW=1400) {
-      if (!url || !url.includes('/upload/')) return url;
-      return url.replace('/upload/', `/upload/q_auto,f_auto,w_${maxW},c_fit/`);
-    }
     async function load() {
-      const res = await fetch('/data.json?ts=' + Date.now());
-      const data = await res.json();
+      const r = await fetch('/api/items');
+      const j = await r.json();
       const list = document.getElementById('list');
       list.innerHTML = '';
-      (data.items || []).forEach(item => {
-        const card = document.createElement('a');
-        card.href = 'javascript:void(0)';
-        card.className = 'item-card';
-        card.onclick = () => openDetail(item.detailUrl || item.mainUrl);
-        const img = document.createElement('img');
-        img.className = 'item-img';
-        img.src = clThumb(item.mainUrl);
-        const name = document.createElement('div');
-        name.className = 'item-name';
-        name.textContent = item.name || '상품';
-        card.appendChild(img);
-        card.appendChild(name);
-        list.appendChild(card);
+
+      (j.items || []).forEach(it => {
+        // Cloudinary 변환(선택) : 851x315 비율로 캔버스 안에 맞추기 (letterbox, 잘림 없음)
+        const mainUrl = `${it.mainUrl.replace('/upload/', '/upload/f_auto,q_auto,w_851,h_315,c_fit,b_white/')}`;
+
+        const a = document.createElement('a');
+        a.className = 'stack-item';
+        a.href = it.detailUrl || it.mainUrl;  // 상세 이미지 있으면 그걸로
+        a.target = '_blank';                 // 눌렀을 때 이미지 새탭으로
+
+        a.innerHTML = `
+          <div class="thumb">
+            <img src="${mainUrl}" alt="${it.title || ''}" />
+            <div class="title">${it.title || ''}</div>
+          </div>
+        `;
+        list.appendChild(a);
       });
     }
-    function openDetail(url) {
-      const m = document.getElementById('modal');
-      const mi = document.getElementById('modalImg');
-      mi.src = clDetail(url || '');
-      m.classList.add('open');
-    }
-    document.getElementById('modal').addEventListener('click', e => {
-      if (e.target.id === 'modal' || e.target.id === 'modalImg') {
-        e.currentTarget.classList.remove('open');
-      }
-    });
     load();
   </script>
 </body>
