@@ -1,81 +1,137 @@
 <!doctype html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>관리자 페이지</title>
   <link rel="stylesheet" href="/styles.css" />
 </head>
-<body>
-  <div class="topbar">관리자 페이지</div>
+<body class="admin">
+  <div class="topbar">관리자 페이지
+    <div class="right">
+      <input id="pass" type="password" placeholder="관리자 비번" />
+      <button id="btnLogin">로그인</button>
+    </div>
+  </div>
+
   <section class="card">
     <h3>상품 업로드</h3>
-    <input type="text" placeholder="상품명(선택)" id="nameInput"><br>
-    메인 이미지: <input type="file" id="mainFile"><br>
-    상세 이미지: <input type="file" id="detailFile"><br>
-    <button id="uploadBtn">업로드</button>
+    <div class="row"><input id="title" placeholder="상품명(선택)" /></div>
+    <div class="row">메인 이미지: <input id="main" type="file" accept="image/*" /></div>
+    <div class="row">상세 이미지: <input id="detail" type="file" accept="image/*" /></div>
+    <div class="row"><button id="btnUpload">업로드</button></div>
+
+    <div class="preview">
+      <div>
+        <div>메인 미리보기</div>
+        <img id="pvMain" />
+      </div>
+      <div>
+        <div>상세 미리보기</div>
+        <img id="pvDetail" />
+      </div>
+    </div>
   </section>
+
   <section class="card">
     <h3>현재 목록 (위/아래/삭제)</h3>
-    <div id="items"></div>
-    <button id="saveOrder" class="btn">순서 저장</button>
+    <ul id="items"></ul>
+    <button id="saveOrder">순서 저장</button>
   </section>
-  <script>
-    function clThumb(url, w=120, h=120) {
-      if (!url || !url.includes('/upload/')) return url;
-      return url.replace('/upload/', `/upload/c_pad,w_${w},h_${h},b_white,q_auto,f_auto/`);
-    }
-    async function refreshList() {
-      const res = await fetch('/data.json?ts=' + Date.now());
-      const data = await res.json();
-      const wrap = document.getElementById('items');
-      wrap.innerHTML = '';
-      (data.items || []).forEach((it, idx) => {
-        const row = document.createElement('div');
-        row.className = 'admin-row';
-        const t1 = document.createElement('img');
-        t1.className = 'thumb-120';
-        t1.src = clThumb(it.mainUrl, 120, 120);
-        const t2 = document.createElement('img');
-        t2.className = 'thumb-120';
-        if (it.detailUrl) t2.src = clThumb(it.detailUrl, 120, 120);
-        const name = document.createElement('input');
-        name.value = it.name || '';
-        name.style.flex = '1';
-        name.onchange = () => it.name = name.value;
-        const up = document.createElement('button');
-        up.textContent = '위로';
-        up.onclick = () => move(idx, -1);
-        const dn = document.createElement('button');
-        dn.textContent = '아래로';
-        dn.onclick = () => move(idx, +1);
-        const del = document.createElement('button');
-        del.textContent = '삭제';
-        del.onclick = () => remove(idx);
-        row.append(t1, t2, name, up, dn, del);
-        wrap.appendChild(row);
-      });
-      function move(i, d) {
-        const j = i + d;
-        if (j < 0 || j >= data.items.length) return;
-        [data.items[i], data.items[j]] = [data.items[j], data.items[i]];
-        save(data.items);
-      }
-      function remove(i) {
-        data.items.splice(i, 1);
-        save(data.items);
-      }
-      async function save(items) {
-        await fetch('/save-order', {
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ items })
-        });
-        refreshList();
-      }
-      document.getElementById('saveOrder').onclick = () => save(data.items);
-    }
-    refreshList();
-  </script>
+
+<script>
+let authed = false;
+
+function showMsg(t) { alert(t); }
+
+function filePreview(input, imgEl) {
+  input.addEventListener('change', () => {
+    if (input.files && input.files[0]) {
+      const url = URL.createObjectURL(input.files[0]);
+      imgEl.src = url;
+    } else imgEl.removeAttribute('src');
+  });
+}
+
+filePreview(document.getElementById('main'), document.getElementById('pvMain'));
+filePreview(document.getElementById('detail'), document.getElementById('pvDetail'));
+
+document.getElementById('btnLogin').onclick = async () => {
+  const password = document.getElementById('pass').value.trim();
+  const r = await fetch('/api/admin/login', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ password })
+  });
+  authed = r.ok;
+  showMsg(authed ? '로그인 성공' : '비밀번호 오류');
+  if (authed) load();
+};
+
+document.getElementById('btnUpload').onclick = async () => {
+  if (!authed) return showMsg('먼저 로그인하세요');
+
+  const fd = new FormData();
+  fd.append('title', document.getElementById('title').value);
+  if (document.getElementById('main').files[0]) fd.append('mainImage', document.getElementById('main').files[0]);
+  if (document.getElementById('detail').files[0]) fd.append('detailImage', document.getElementById('detail').files[0]);
+
+  const r = await fetch('/api/upload', { method: 'POST', body: fd });
+  const j = await r.json();
+  if (j.success) {
+    showMsg('업로드 성공');
+    document.getElementById('title').value = '';
+    document.getElementById('main').value = '';
+    document.getElementById('detail').value = '';
+    document.getElementById('pvMain').removeAttribute('src');
+    document.getElementById('pvDetail').removeAttribute('src');
+    load();
+  } else {
+    showMsg('업로드 실패');
+  }
+};
+
+async function load() {
+  const r = await fetch('/api/items');
+  const j = await r.json();
+  const ul = document.getElementById('items');
+  ul.innerHTML = '';
+  (j.items || []).forEach((it, idx) => {
+    const li = document.createElement('li');
+    li.dataset.id = it.id;
+    li.innerHTML = `
+      <img class="thumb" src="${(it.mainUrl||'').replace('/upload/', '/upload/f_auto,q_auto,w_120,h_120,c_fit,b_white/')}" />
+      <img class="thumb" src="${it.detailUrl ? it.detailUrl.replace('/upload/', '/upload/f_auto,q_auto,w_120,h_120,c_fit,b_white/') : ''}" onerror="this.style.display='none';" />
+      <div class="name">${it.title || '(제목 없음)'}</div>
+      <div class="btns">
+        <button class="up">위로</button>
+        <button class="down">아래로</button>
+        <button class="del">삭제</button>
+      </div>
+    `;
+    // 위/아래/삭제
+    li.querySelector('.up').onclick = () => { if (idx>0) ul.insertBefore(li, ul.children[idx-1]); };
+    li.querySelector('.down').onclick = () => { if (idx<ul.children.length-1) ul.insertBefore(ul.children[idx+1], li); };
+    li.querySelector('.del').onclick = async () => {
+      if (!confirm('삭제할까요?')) return;
+      const rr = await fetch('/api/item/'+it.id, { method:'DELETE' });
+      const jj = await rr.json();
+      if (jj.success) load();
+    };
+    ul.appendChild(li);
+  });
+}
+
+document.getElementById('saveOrder').onclick = async () => {
+  if (!authed) return showMsg('먼저 로그인하세요');
+  const ids = [...document.querySelectorAll('#items li')].map(li => li.dataset.id);
+  const r = await fetch('/api/order', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ ids })
+  });
+  const j = await r.json();
+  showMsg(j.success ? '저장됨' : '실패');
+};
+</script>
 </body>
 </html>
