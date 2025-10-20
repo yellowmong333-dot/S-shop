@@ -1,17 +1,81 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>관리자 페이지</title><link rel="stylesheet" href="/styles.css"></head><body>
-<header class="topbar">관리자 페이지 <button style="float:right" class="link" onclick="logout()">로그아웃</button></header>
-<section id="loginBox" class="card"><div>기본 비밀번호: <b>admin123</b></div><div class="row"><input id="pw" type="password" placeholder="비밀번호 입력"><button onclick="login()">로그인</button></div></section>
-<section id="adminBox" class="hidden">
-  <div class="card"><h3>상품 업로드</h3><div class="row"><input id="name" placeholder="상품명(선택)"></div><div class="row">메인 이미지: <input id="mainFile" type="file" accept="image/*"></div><div class="row">상세 이미지: <input id="detailFile" type="file" accept="image/*"></div><button onclick="upload()">업로드</button><div id="result" class="preview"></div></div>
-  <div class="card"><h3>현재 목록 (위/아래/삭제)</h3><ul id="items"></ul><button onclick="saveOrder()">순서 저장</button></div>
-</section>
-<script>
-function thumb(url,w=120,h=120){try{const u=new URL(url);if(u.hostname.includes('res.cloudinary.com')){const p=u.pathname.split('/upload/');if(p.length===2){u.pathname=p[0]+'/upload/c_fill,f_auto,q_auto,w_'+w+',h_'+h+'/'+p[1];return u.toString();}}}catch(e){}return url;}
-async function me(){const r=await fetch('/api/me');const j=await r.json();const on=!!j.loggedIn;document.getElementById('loginBox').classList.toggle('hidden',on);document.getElementById('adminBox').classList.toggle('hidden',!on);if(on) loadItems();}
-async function login(){const p=document.getElementById('pw').value;const r=await fetch('/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:p})});if(r.ok){me();}else alert('비밀번호가 틀렸습니다');}
-async function logout(){await fetch('/api/logout',{method:'POST'});me();}
-async function upload(){const fd=new FormData();const n=document.getElementById('name').value;const m=document.getElementById('mainFile').files[0];const d=document.getElementById('detailFile').files[0];if(n)fd.append('name',n);if(m)fd.append('mainImage',m);if(d)fd.append('detailImage',d);const r=await fetch('/upload',{method:'POST',body:fd});const j=await r.json();const box=document.getElementById('result');if(j.success){const mu=j.item?.mainUrl;const du=j.item?.detailUrl;box.innerHTML=`<div>✅ 업로드 성공!</div><div class="pv"><img src="${thumb(mu)}"><img src="${thumb(du)}"></div>`;await loadItems();}else{box.textContent='업로드 실패';}}
-async function loadItems(){const r=await fetch('/api/items');const d=await r.json();const ul=document.getElementById('items');ul.innerHTML='';(d.items||[]).forEach(it=>{const li=document.createElement('li');li.innerHTML=`<img class="thumb" src="${thumb(it.mainUrl)}"><span class="name">${it.name||''}</span><button data-id="${it.id}" data-dir="-1">위로</button><button data-id="${it.id}" data-dir="1">아래로</button><button data-id="${it.id}" data-del="1">삭제</button>`;ul.appendChild(li);});ul.onclick=async e=>{const id=e.target.getAttribute('data-id');if(!id)return;const d=await (await fetch('/api/items')).json();const ids=d.items.map(x=>x.id);const idx=ids.indexOf(id);const dir=parseInt(e.target.getAttribute('data-dir')||'0',10);if(e.target.getAttribute('data-del')){await fetch('/api/item/'+id,{method:'DELETE'});await loadItems();return;}if(dir){const sw=idx+dir;if(sw>=0&&sw<ids.length){const t=ids[idx];ids[idx]=ids[sw];ids[sw]=t;await fetch('/api/reorder',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ids})});await loadItems();}}};}
-async function saveOrder(){/* no-op, 이미 즉시 저장 */}
-me();
-</script></body></html>
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>관리자 페이지</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="topbar">관리자 페이지</div>
+  <section class="card">
+    <h3>상품 업로드</h3>
+    <input type="text" placeholder="상품명(선택)" id="nameInput"><br>
+    메인 이미지: <input type="file" id="mainFile"><br>
+    상세 이미지: <input type="file" id="detailFile"><br>
+    <button id="uploadBtn">업로드</button>
+  </section>
+  <section class="card">
+    <h3>현재 목록 (위/아래/삭제)</h3>
+    <div id="items"></div>
+    <button id="saveOrder" class="btn">순서 저장</button>
+  </section>
+  <script>
+    function clThumb(url, w=120, h=120) {
+      if (!url || !url.includes('/upload/')) return url;
+      return url.replace('/upload/', `/upload/c_pad,w_${w},h_${h},b_white,q_auto,f_auto/`);
+    }
+    async function refreshList() {
+      const res = await fetch('/data.json?ts=' + Date.now());
+      const data = await res.json();
+      const wrap = document.getElementById('items');
+      wrap.innerHTML = '';
+      (data.items || []).forEach((it, idx) => {
+        const row = document.createElement('div');
+        row.className = 'admin-row';
+        const t1 = document.createElement('img');
+        t1.className = 'thumb-120';
+        t1.src = clThumb(it.mainUrl, 120, 120);
+        const t2 = document.createElement('img');
+        t2.className = 'thumb-120';
+        if (it.detailUrl) t2.src = clThumb(it.detailUrl, 120, 120);
+        const name = document.createElement('input');
+        name.value = it.name || '';
+        name.style.flex = '1';
+        name.onchange = () => it.name = name.value;
+        const up = document.createElement('button');
+        up.textContent = '위로';
+        up.onclick = () => move(idx, -1);
+        const dn = document.createElement('button');
+        dn.textContent = '아래로';
+        dn.onclick = () => move(idx, +1);
+        const del = document.createElement('button');
+        del.textContent = '삭제';
+        del.onclick = () => remove(idx);
+        row.append(t1, t2, name, up, dn, del);
+        wrap.appendChild(row);
+      });
+      function move(i, d) {
+        const j = i + d;
+        if (j < 0 || j >= data.items.length) return;
+        [data.items[i], data.items[j]] = [data.items[j], data.items[i]];
+        save(data.items);
+      }
+      function remove(i) {
+        data.items.splice(i, 1);
+        save(data.items);
+      }
+      async function save(items) {
+        await fetch('/save-order', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ items })
+        });
+        refreshList();
+      }
+      document.getElementById('saveOrder').onclick = () => save(data.items);
+    }
+    refreshList();
+  </script>
+</body>
+</html>
